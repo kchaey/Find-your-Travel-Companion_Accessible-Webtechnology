@@ -3,39 +3,60 @@
 import dataService from "../service/dataService.js";
 
 const htmlTemplate = /*html*/`
-  <div>
-    <h2>Settings (My Profile)</h2>
-    <p>This is the information other travelers will see about you.</p>
+  <div class="view">
+    <h1 class="view__title">Settings</h1>
+    <p class="sub-title">This information will be visible to other travelers.</p>
     
-    <label for="name">Your display name for chats</label>
-    <input id="name" type="text" v-model="profile.name" @input="saveProfile()">
+    <div class="settings-container">
+      <section class="settings-section">
+        <h3 class="card__title" style="margin-top:0">My Profile</h3>
     
-    <div>
-      <label for="gender">My Gender:</label>
-      <select id="gender" name="gender" v-model="profile.gender" @change="saveProfile()">
+        <div class="form-group">
+          <label>Display Name</label>
+          <input type="text" v-model="profile.name" @input="saveProfile" placeholder="Enter name">
+        </div>
+        
+        <div style="display: flex; gap: 15px;">
+          <div class="form-group" style="flex: 1;">
+            <label>Gender</label>
+            <select v-model="profile.gender" @change="saveProfile">
         <option value="">Select...</option>
         <option value="male">Male</option>
         <option value="female">Female</option>
       </select>
     </div>
-    
-    <div>
-      <label for="ageRange">My Age Range:</label>
-      <select id="ageRange" name="ageRange" v-model="profile.ageRange" @change="saveProfile()">
+          <div class="form-group" style="flex: 1;">
+            <label>Age Range</label>
+            <select v-model="profile.ageRange" @change="saveProfile">
         <option value="">Select...</option>
         <option value="20s">20s</option>
         <option value="30s">30s</option>
         <option value="40s">40s</option>
-        <option value="50s+">50s+</option>
       </select>
     </div>
-    
-    <div>
-      <label for="bio">My Introduction:</label><br>
-      <textarea id="bio" name="bio" rows="4" cols="50" v-model="profile.bio" @input="saveProfile()" placeholder="Tell others about your travel style..."></textarea>
+        </div>
+        
+        <div class="form-group">
+          <label>Introduction</label>
+          <textarea rows="4" v-model="profile.bio" @input="saveProfile" placeholder="Tell others about your style..."></textarea>
+        </div>
+      </section>
+
+      <section class="settings-section">
+        <h3 class="card__title" style="margin-top:0">Identity Verification</h3>
+        <p style="color: #888; font-size: 0.9rem; margin-bottom: 15px;">Verify your identity to earn a trust badge.</p>
+        
+        <div style="background: #252525; padding: 20px; border-radius: 12px; text-align: center;">
+          <input type="file" id="id-upload" ref="fileInput" @change="onFileSelected" style="display:none">
+          <button class="btn-secondary" @click="$refs.fileInput.click()">
+            {{ fileName ? fileName : 'Choose ID Card Image' }}
+          </button>
+          <button class="btn-submit" @click="submitVerification" :disabled="!selectedFile">
+            Submit for Verification
+          </button>
+        </div>
+      </section>
     </div>
-    
-    <button @click="saveProfile()">Save Profile</button>
   </div>
 `;
 
@@ -43,26 +64,52 @@ export default {
   template: htmlTemplate,
   data() {
     return {
-      // 🚨 모든 프로필 정보를 담을 통합 객체
+      // Unified profile object to manage all user data
       profile: {
           name: "",
           gender: "",
           ageRange: "",
-          bio: ""
-      }
+        bio: "",
+        isVerified: false // Track verification status
+      },
+      selectedFile: null, // Temporary storage for the file object
+      fileName: ""        // Name of the selected file to display
     };
   },
   methods: {
-    // 🚨 모든 변경 사항을 dataService를 통해 한 번에 저장
+    // Save profile data via dataService
     saveProfile() {
-      // TODO: dataService.saveUserProfile 함수가 정의되어 있어야 합니다.
       dataService.saveUserProfile(this.profile); 
-      console.log("Profile saved:", this.profile);
+      console.log("Profile updated:", this.profile);
+    },
+
+    // Handle file selection and update UI
+    onFileSelected(event) {
+      const file = event.target.files[0];
+      if (file) {
+        this.selectedFile = file;
+        this.fileName = file.name;
+      }
+    },
+
+    // Mock function for submitting identity verification
+    submitVerification() {
+      if (!this.selectedFile) return;
+      
+      // Simulating an API call/upload process
+      console.log("Uploading ID:", this.selectedFile);
+      
+      // Once "uploaded", set status to verified and save
+      this.profile.isVerified = true;
+      this.saveProfile();
+      alert("Verification document submitted successfully!");
     }
   },
   mounted() {
-    // 🚨 컴포넌트가 마운트될 때 dataService에서 프로필 정보를 불러옴
-    // TODO: dataService.getUserProfile 함수가 정의되어 있어야 합니다.
-    this.profile = dataService.getUserProfile(); 
+    // Load existing profile data when component mounts
+    const savedData = dataService.getUserProfile();
+    if (savedData) {
+      this.profile = savedData;
+    }
   }
 };
